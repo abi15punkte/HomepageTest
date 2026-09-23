@@ -36,8 +36,12 @@ function update(){
 
   const targetX=m.cropX-(TARGET_X_PX*m.scale);
   const targetY=m.cropY-(TARGET_Y_PX*m.scale);
-  const tx=(innerWidth/2-targetX*scale)*e;
-  const ty=(innerHeight/2-targetY*scale)*e;
+
+  const targetTx=(innerWidth/2-targetX)*scale-innerWidth/2*(scale-1);
+  const targetTy=(innerHeight/2-targetY)*scale-innerHeight/2*(scale-1);
+
+  const tx=targetTx*e;
+  const ty=targetTy*e;
 
   img.style.transform='translate3d('+tx+'px,'+ty+'px,0) scale('+scale+')';
   caption.style.transform='translate3d(0,'+(-20*p)+'px,0)';
