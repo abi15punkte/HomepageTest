@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-Kamerafahrt</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="back" href="index.html">← Übersicht</a>
+<main class="demo">
+<section class="s-track" id="track"><div class="s-sticky"><div class="s-canvas" id="canvas">
+<img class="s-photo" data-index="0" src="IMG_0035.jpeg" alt="" draggable="false">
+<img class="s-photo" data-index="1" src="IMG_0036.jpeg" alt="" draggable="false">
+<img class="s-photo" data-index="2" src="IMG_0037.jpeg" alt="" draggable="false">
+<img class="s-photo" data-index="3" src="IMG_0038.jpeg" alt="" draggable="false">
+<img class="s-photo" data-index="4" src="IMG_0039.jpeg" alt="" draggable="false">
+<img class="s-photo" data-index="5" src="IMG_0040.jpeg" alt="" draggable="false">
+</div>
+<div class="caption s-caption"><p>05 / S-Kamerafahrt</p><h1>Sechs Fotos.<br>Eine Bewegung.</h1><p>Die Kamera folgt einem weichen S-Pfad. Zwischen den Fotos läuft ein kontinuierlicher Cross-Fade.</p></div>
+</div></section>
+</main>
+<div class="hint">Scrollen</div>
+<script>
+const track=document.querySelector('#track');
+const photos=[...document.querySelectorAll('.s-photo')];
+const path=[
+{x:50,y:10,zoom:1.15},
+{x:80,y:26,zoom:1.55},
+{x:69,y:42,zoom:2.0},
+{x:31,y:58,zoom:2.55},
+{x:20,y:74,zoom:3.25},
+{x:50,y:90,zoom:5.0}
+];
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const smooth=t=>t*t*(3-2*t);
+function catmull(p0,p1,p2,p3,t){const t2=t*t,t3=t2*t;return .5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t2+(-p0+3*p1-3*p2+p3)*t3)}
+function cameraAt(progress){
+ const n=path.length-1,scaled=clamp(progress)*n,i=Math.min(n-1,Math.floor(scaled)),t=smooth(scaled-i);
+ const a=path[Math.max(0,i-1)],b=path[i],c=path[i+1],d=path[Math.min(n,i+2)];
+ return {x:catmull(a.x,b.x,c.x,d.x,t),y:catmull(a.y,b.y,c.y,d.y,t),zoom:catmull(a.zoom,b.zoom,c.zoom,d.zoom,t)};
+}
+function updateBaseSize(img){
+ if(!img.naturalWidth)return;
+ const vw=innerWidth,vh=innerHeight,cover=Math.max(vw/img.naturalWidth,vh/img.naturalHeight);
+ img.dataset.baseWidth=img.naturalWidth*cover;
+ img.dataset.baseHeight=img.naturalHeight*cover;
+}
+function update(){
+ const max=Math.max(1,track.offsetHeight-innerHeight);
+ const rect=track.getBoundingClientRect();
+ const p=clamp(-rect.top/max),cam=cameraAt(p);
+ const n=path.length-1,scaled=p*n,segment=Math.min(n-1,Math.floor(scaled)),local=scaled-segment;
+ photos.forEach((img,index)=>{
+  updateBaseSize(img);
+  const baseW=parseFloat(img.dataset.baseWidth||0),baseH=parseFloat(img.dataset.baseHeight||0);
+  if(!baseW||!baseH)return;
+  const scale=cam.zoom,x=innerWidth/2-(cam.x/100)*baseW*scale,y=innerHeight/2-(cam.y/100)*baseH*scale;
+  img.style.width=baseW+'px';img.style.height=baseH+'px';
+  img.style.transform='translate3d('+x+'px,'+y+'px,0) scale('+scale+')';
+  let opacity=0;
+  if(index===segment){
+   opacity=1;
+   if(local>0.72)opacity=1-smooth(clamp((local-.72)/.28));
+  }else if(index===segment+1){
+   if(local>0.72)opacity=smooth(clamp((local-.72)/.28));
+  }
+  if(p<=0&&index===0)opacity=1;
+  if(p>=1&&index===photos.length-1)opacity=1;
+  img.style.opacity=opacity;
+ });
+}
+photos.forEach(img=>img.addEventListener('load',()=>{updateBaseSize(img);update()}));
+addEventListener('scroll',update,{passive:true});
+addEventListener('resize',update);
+update();
+</script>
+</body>
+</html>
