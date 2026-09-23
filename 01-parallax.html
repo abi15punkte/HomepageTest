@@ -12,38 +12,37 @@ function ease(t){
   return t<0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
 }
 
-function coverMetrics(){
-  const vw=innerWidth, vh=innerHeight;
-  const iw=img.naturalWidth, ih=img.naturalHeight;
-  const coverScale=Math.max(vw/iw,vh/ih);
-  const renderedW=iw*coverScale;
-  const renderedH=ih*coverScale;
-  return {
-    scale:coverScale,
-    cropX=(renderedW-vw)/2,
-    cropY=(renderedH-vh)/2
-  };
-}
-
 function update(){
+  if(!img.naturalWidth || !img.naturalHeight) return;
+
+  const vw=innerWidth;
+  const vh=innerHeight;
+  const coverScale=Math.max(vw/img.naturalWidth,vh/img.naturalHeight);
+  const baseW=img.naturalWidth*coverScale;
+  const baseH=img.naturalHeight*coverScale;
+
+  const baseX=(vw-baseW)/2;
+  const baseY=(vh-baseH)/2;
+
   const max=Math.max(1,track.offsetHeight-innerHeight);
   const rect=track.getBoundingClientRect();
   const p=Math.min(1,Math.max(0,-rect.top/max));
   const e=ease(p);
 
   const scale=START_SCALE+(TARGET_SCALE-START_SCALE)*e;
-  const m=coverMetrics();
 
-  const targetX=m.cropX-(TARGET_X_PX*m.scale);
-  const targetY=m.cropY-(TARGET_Y_PX*m.scale);
+  const finalX=vw/2-(TARGET_X_PX*coverScale*TARGET_SCALE);
+  const finalY=vh/2-(TARGET_Y_PX*coverScale*TARGET_SCALE);
 
-  const targetTx=(innerWidth/2-targetX)*scale-innerWidth/2*(scale-1);
-  const targetTy=(innerHeight/2-targetY)*scale-innerHeight/2*(scale-1);
+  const x=baseX+(finalX-baseX)*e;
+  const y=baseY+(finalY-baseY)*e;
 
-  const tx=targetTx*e;
-  const ty=targetTy*e;
+  img.style.width=baseW+'px';
+  img.style.height=baseH+'px';
+  img.style.left=x+'px';
+  img.style.top=y+'px';
+  img.style.transform='scale('+scale+')';
 
-  img.style.transform='translate3d('+tx+'px,'+ty+'px,0) scale('+scale+')';
   caption.style.transform='translate3d(0,'+(-20*p)+'px,0)';
 }
 
